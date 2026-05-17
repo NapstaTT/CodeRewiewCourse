@@ -1,153 +1,336 @@
-#1. Имеется набор геометрических фигур разного цвета. Среди фигур могут встречаться круги, квадраты и отрезки.
-# Для каждой фигуры известно, какого она цвета. Кроме того, для круга известен его радиус (тип int), для квадрата
-# – размер стороны (тип int), для отрезка–длина (тип float). Написать функцию, позволяющую ввести с клавиатуры
-# данные для одной фигуры. Используя эту функцию, ввести сведения об N фигурах и сохранить их в бинарном файле.
-# Распечатать на экране содержимое данного файла в виде таблицы.
-# Для решения использовать классы, обязательно наличие конструктора(ов),для вывода информации переопределить метод __str__()
+"""Набор геометрических фигур.
 
-import struct  # Импортируем модуль для работы с бинарными данными
+Программа позволяет ввести с клавиатуры данные о N фигурах (круги, квадраты, отрезки),
+сохранить их в бинарный файл и вывести содержимое файла в виде таблицы.
 
-# Базовый класс для всех фигур
+Для каждой фигуры известен цвет. Для круга – радиус (int), для квадрата – сторона (int),
+для отрезка – длина (float). Используются классы с конструкторами, метод __str__ переопределён.
+"""
+
+import struct
+from typing import List, Union, BinaryIO
+
+
 class Shape:
-    def __init__(self, color):
-        self.color = color  # Цвет фигуры
+    """Базовый класс для всех фигур."""
 
-    def __str__(self):
-        return f"Цвет: {self.color}"  # Возвращает строку с цветом фигуры
+    def __init__(self, color: str) -> None:
+        """Инициализирует фигуру с заданным цветом.
 
-# Класс для круга
+        Args:
+            color (str): Цвет фигуры.
+        """
+        self.color = color
+
+    def __str__(self) -> str:
+        """Возвращает строковое представление фигуры.
+
+        Returns:
+            str: Цвет фигуры.
+        """
+        return f"Цвет: {self.color}"
+
+
 class Circle(Shape):
-    def __init__(self, color, radius):
-        super().__init__(color)  # Вызов конструктора базового класса для установки цвета
-        self.radius = radius  # Радиус круга
+    """Класс, представляющий круг."""
 
-    def __str__(self):
-        # Возвращает строку с информацией о круге
+    def __init__(self, color: str, radius: int) -> None:
+        """Инициализирует круг.
+
+        Args:
+            color (str): Цвет круга.
+            radius (int): Радиус круга.
+        """
+        super().__init__(color)
+        self.radius = radius
+
+    def __str__(self) -> str:
+        """Возвращает строковое описание круга.
+
+        Returns:
+            str: Информация о круге.
+        """
         return f"Круг: {super().__str__()}, Радиус: {self.radius}"
 
-# Класс для квадрата
-class Square(Shape):
-    def __init__(self, color, side):
-        super().__init__(color)  # Вызов конструктора базового класса для установки цвета
-        self.side = side  # Длина стороны квадрата
 
-    def __str__(self):
-        # Возвращает строку с информацией о квадрате
+class Square(Shape):
+    """Класс, представляющий квадрат."""
+
+    def __init__(self, color: str, side: int) -> None:
+        """Инициализирует квадрат.
+
+        Args:
+            color (str): Цвет квадрата.
+            side (int): Длина стороны квадрата.
+        """
+        super().__init__(color)
+        self.side = side
+
+    def __str__(self) -> str:
+        """Возвращает строковое описание квадрата.
+
+        Returns:
+            str: Информация о квадрате.
+        """
         return f"Квадрат: {super().__str__()}, Сторона: {self.side}"
 
-# Класс для отрезка
-class Line(Shape):
-    def __init__(self, color, length):
-        super().__init__(color)  # Вызов конструктора базового класса для установки цвета
-        self.length = length  # Длина отрезка
 
-    def __str__(self):
-        # Возвращает строку с информацией об отрезке
+class Line(Shape):
+    """Класс, представляющий отрезок."""
+
+    def __init__(self, color: str, length: float) -> None:
+        """Инициализирует отрезок.
+
+        Args:
+            color (str): Цвет отрезка.
+            length (float): Длина отрезка.
+        """
+        super().__init__(color)
+        self.length = length
+
+    def __str__(self) -> str:
+        """Возвращает строковое описание отрезка.
+
+        Returns:
+            str: Информация об отрезке.
+        """
         return f"Отрезок: {super().__str__()}, Длина: {self.length:.2f}"
 
-# Функция для ввода данных о фигуре
-def input_shape():
-    # Запрашиваем у пользователя тип фигуры
-    shape_type = input("Введите тип фигуры (круг, квадрат, отрезок): ").strip().lower()
-    # Запрашиваем цвет фигуры
-    color = input("Введите цвет фигуры: ").strip()
 
-    # В зависимости от типа фигуры запрашиваем дополнительные параметры
+# Тип фигуры: любая из трёх
+ShapeType = Union[Circle, Square, Line]
+
+
+def input_shape() -> ShapeType:
+    """Интерактивный ввод данных одной фигуры с клавиатуры.
+
+    Returns:
+        ShapeType: Объект фигуры (Circle, Square или Line).
+
+    Raises:
+        ValueError: Если тип фигуры не распознан (но цикл обработки предотвращает выход).
+    """
+    print("\n--- Новая фигура ---")
+    while True:
+        shape_type = input("Тип фигуры (круг, квадрат, отрезок): ").strip().lower()
+        if shape_type in ("круг", "квадрат", "отрезок"):
+            break
+        print("Ошибка: допустимые типы: 'круг', 'квадрат', 'отрезок'")
+
+    while True:
+        color = input("Цвет: ").strip()
+        if color:
+            break
+        print("Цвет не может быть пустым. Повторите ввод.")
+
     if shape_type == "круг":
-        radius = int(input("Введите радиус круга: "))
-        return Circle(color, radius)  # Создаем объект круга
-    elif shape_type == "квадрат":
-        side = int(input("Введите размер стороны квадрата: "))
-        return Square(color, side)  # Создаем объект квадрата
-    elif shape_type == "отрезок":
-        length = float(input("Введите длину отрезка: "))
-        return Line(color, length)  # Создаем объект отрезка
-    else:
-        raise ValueError("Неизвестный тип фигуры")  # Ошибка, если тип фигуры неизвестен
+        while True:
+            try:
+                radius = int(input("Радиус (целое число): "))
+                return Circle(color, radius)
+            except ValueError:
+                print("Ошибка: радиус должен быть целым числом.")
 
-# Функция для сохранения фигур в бинарный файл
-def save_shapes_to_file(shapes, filename):
-    with open(filename, 'wb') as f:  # Открываем файл для записи в бинарном режиме
+    if shape_type == "квадрат":
+        while True:
+            try:
+                side = int(input("Сторона (целое число): "))
+                return Square(color, side)
+            except ValueError:
+                print("Ошибка: сторона должна быть целым числом.")
+
+    # shape_type == "отрезок"
+    while True:
+        try:
+            length = float(input("Длина (вещественное число): "))
+            return Line(color, length)
+        except ValueError:
+            print("Ошибка: длина должна быть числом.")
+
+
+def _write_string(file: BinaryIO, s: str) -> None:
+    """Записывает строку в бинарный файл с предшествующей длиной (2 байта).
+
+    Args:
+        file: Файловый объект, открытый для записи в бинарном режиме.
+        s (str): Строка для записи.
+
+    Returns:
+        None
+
+    Note:
+        Используется формат 'H' (unsigned short) для длины, чтобы избежать
+        проблем с нулевыми байтами внутри строки.
+    """
+    encoded = s.encode('utf-8')
+    file.write(struct.pack('H', len(encoded)))   # длина строки (2 байта)
+    file.write(encoded)                          # сама строка
+
+
+def _read_string(file: BinaryIO) -> str:
+    """Читает строку из бинарного файла, записанную функцией _write_string.
+
+    Args:
+        file: Файловый объект, открытый для чтения в бинарном режиме.
+
+    Returns:
+        str: Прочитанная строка.
+
+    Raises:
+        struct.error: Если не удаётся прочитать длину или данные,
+                      или файл имеет неожиданный конец.
+    """
+    try:
+        length_data = file.read(2)
+        if not length_data:
+            raise EOFError("Неожиданный конец файла при чтении строки")
+        length = struct.unpack('H', length_data)[0]
+        data = file.read(length)
+        if len(data) != length:
+            raise EOFError("Неожиданный конец файла: строка обрезана")
+        return data.decode('utf-8')
+    except EOFError as e:
+        raise struct.error(str(e))
+
+
+def save_shapes_to_file(shapes: List[ShapeType], filename: str) -> None:
+    """Сохраняет список фигур в бинарный файл.
+
+    Формат записи для каждой фигуры:
+        - тип (1 байт, для выравнивания используем 'B')
+        - параметр (int для круга/квадрата, float для отрезка)
+        - цвет (строкой с предшествующей длиной)
+
+    Args:
+        shapes (List[ShapeType]): Список фигур.
+        filename (str): Имя выходного файла.
+
+    Raises:
+        OSError: При ошибках ввода-вывода.
+    """
+    with open(filename, 'wb') as f:
         for shape in shapes:
             if isinstance(shape, Circle):
-                f.write(struct.pack('i', 1))  # Записываем тип фигуры: круг (1)
-                f.write(struct.pack('i', shape.radius))  # Записываем радиус
+                f.write(struct.pack('B', 1))          # тип 1 – круг
+                f.write(struct.pack('i', shape.radius))
+                _write_string(f, shape.color)
             elif isinstance(shape, Square):
-                f.write(struct.pack('i', 2))  # Записываем тип фигуры: квадрат (2)
-                f.write(struct.pack('i', shape.side))  # Записываем длину стороны
+                f.write(struct.pack('B', 2))          # тип 2 – квадрат
+                f.write(struct.pack('i', shape.side))
+                _write_string(f, shape.color)
             elif isinstance(shape, Line):
-                f.write(struct.pack('i', 3))  # Записываем тип фигуры: отрезок (3)
-                f.write(struct.pack('f', shape.length))  # Записываем длину отрезка
-            # Записываем цвет фигуры как строку, заканчивающуюся нулевым байтом
-            f.write(shape.color.encode('utf-8') + b'\x00')
+                f.write(struct.pack('B', 3))          # тип 3 – отрезок
+                f.write(struct.pack('f', shape.length))
+                _write_string(f, shape.color)
+            else:
+                raise TypeError(f"Неизвестный тип фигуры: {type(shape)}")
 
-# Функция для загрузки фигур из бинарного файла
-def load_shapes_from_file(filename):
-    shapes = []  # Список для хранения загруженных фигур
-    with open(filename, 'rb') as f:  # Открываем файл для чтения в бинарном режиме
+
+def load_shapes_from_file(filename: str) -> List[ShapeType]:
+    """Загружает фигуры из бинарного файла, созданного save_shapes_to_file.
+
+    Args:
+        filename (str): Имя файла.
+
+    Returns:
+        List[ShapeType]: Список загруженных фигур.
+
+    Raises:
+        FileNotFoundError: Если файл не существует.
+        struct.error: Если файл повреждён или имеет неверный формат.
+        OSError: При других ошибках ввода-вывода.
+    """
+    shapes = []
+    with open(filename, 'rb') as f:
         while True:
-            type_bytes = f.read(4)  # Читаем 4 байта (тип фигуры)
-            if not type_bytes:  # Если файл закончился, выходим из цикла
+            # Пытаемся прочитать тип фигуры (1 байт)
+            type_byte = f.read(1)
+            if not type_byte:                # достигнут конец файла
                 break
-            shape_type = struct.unpack('i', type_bytes)[0]  # Преобразуем байты в число
+            shape_type = struct.unpack('B', type_byte)[0]
 
-            # В зависимости от типа фигуры читаем параметр
-            if shape_type == 1:  # Круг
-                radius = struct.unpack('i', f.read(4))[0]  # Читаем радиус
-                color = b''
-                while True:
-                    byte = f.read(1)  # Читаем цвет посимвольно
-                    if byte == b'\x00':  # Нулевой байт означает конец строки
-                        break
-                    color += byte
-                color = color.decode('utf-8')  # Преобразуем байты в строку
-                shapes.append(Circle(color, radius))  # Создаем объект круга
-            elif shape_type == 2:  # Квадрат
-                side = struct.unpack('i', f.read(4))[0]  # Читаем длину стороны
-                color = b''
-                while True:
-                    byte = f.read(1)
-                    if byte == b'\x00':
-                        break
-                    color += byte
-                color = color.decode('utf-8')
-                shapes.append(Square(color, side))  # Создаем объект квадрата
-            elif shape_type == 3:  # Отрезок
-                length = struct.unpack('f', f.read(4))[0]  # Читаем длину отрезка
-                color = b''
-                while True:
-                    byte = f.read(1)
-                    if byte == b'\x00':
-                        break
-                    color += byte
-                color = color.decode('utf-8')
-                shapes.append(Line(color, length))  # Создаем объект отрезка
-    return shapes  # Возвращаем список фигур
+            if shape_type == 1:              # круг
+                radius = struct.unpack('i', f.read(4))[0]
+                color = _read_string(f)
+                shapes.append(Circle(color, radius))
+            elif shape_type == 2:            # квадрат
+                side = struct.unpack('i', f.read(4))[0]
+                color = _read_string(f)
+                shapes.append(Square(color, side))
+            elif shape_type == 3:            # отрезок
+                length = struct.unpack('f', f.read(4))[0]
+                color = _read_string(f)
+                shapes.append(Line(color, length))
+            else:
+                raise struct.error(f"Неизвестный тип фигуры {shape_type} в файле")
+    return shapes
 
-# Функция для вывода фигур в виде таблицы
-def print_shapes_table(shapes):
-    # Выводим заголовок таблицы
-    print("{:<10} {:<10} {:<10}".format("Тип", "Цвет", "Параметр"))
-    print("-" * 30)  # Разделитель
+
+def print_shapes_table(shapes: List[ShapeType]) -> None:
+    """Выводит список фигур в виде таблицы.
+
+    Args:
+        shapes (List[ShapeType]): Список фигур.
+
+    Returns:
+        None
+    """
+    # Заголовок таблицы
+    print("\n{:<12} {:<12} {:<20}".format("Тип", "Цвет", "Параметр"))
+    print("-" * 44)
+
     for shape in shapes:
-        # В зависимости от типа фигуры выводим информацию
         if isinstance(shape, Circle):
-            print("{:<10} {:<10} {:<10}".format("Круг", shape.color, f"Радиус: {shape.radius}"))
+            print("{:<12} {:<12} {:<20}".format("Круг", shape.color, f"Радиус: {shape.radius}"))
         elif isinstance(shape, Square):
-            print("{:<10} {:<10} {:<10}".format("Квадрат", shape.color, f"Сторона: {shape.side}"))
+            print("{:<12} {:<12} {:<20}".format("Квадрат", shape.color, f"Сторона: {shape.side}"))
         elif isinstance(shape, Line):
-            print("{:<10} {:<10} {:<10}".format("Отрезок", shape.color, f"Длина: {shape.length:.2f}"))
+            print("{:<12} {:<12} {:<20}".format("Отрезок", shape.color, f"Длина: {shape.length:.2f}"))
 
-# Основная часть программы
+
+def main() -> None:
+    """Основная функция: запрос N, ввод фигур, сохранение, загрузка и вывод."""
+    print("Программа для работы с геометрическими фигурами")
+    print("Доступные типы: круг, квадрат, отрезок")
+
+    # Ввод количества фигур с защитой
+    while True:
+        try:
+            n = int(input("\nВведите количество фигур: "))
+            if n > 0:
+                break
+            print("Количество должно быть положительным целым числом.")
+        except ValueError:
+            print("Ошибка: введите целое число.")
+
+    shapes = []
+    for i in range(1, n + 1):
+        print(f"\nФигура №{i}")
+        shapes.append(input_shape())
+
+    filename = "shapes.bin"
+    try:
+        save_shapes_to_file(shapes, filename)
+        print(f"\nФигуры сохранены в файл '{filename}'.")
+    except OSError as e:
+        print(f"Ошибка при записи файла: {e}")
+        return
+
+    try:
+        loaded_shapes = load_shapes_from_file(filename)
+    except FileNotFoundError:
+        print(f"Файл '{filename}' не найден после записи – странная ошибка.")
+        return
+    except struct.error as e:
+        print(f"Файл повреждён: {e}")
+        return
+    except OSError as e:
+        print(f"Ошибка при чтении файла: {e}")
+        return
+
+    print("\nСодержимое файла (таблица):")
+    print_shapes_table(loaded_shapes)
+
+
 if __name__ == "__main__":
-    # Запрашиваем количество фигур
-    N = int(input("Введите количество фигур: "))
-    shapes = []  # Список для хранения фигур
-    for _ in range(N):
-        shapes.append(input_shape())  # Вводим данные о каждой фигуре
-
-    filename = "shapes.bin"  # Имя файла для сохранения данных
-    save_shapes_to_file(shapes, filename)  # Сохраняем фигуры в файл
-
-    loaded_shapes = load_shapes_from_file(filename)  # Загружаем фигуры из файла
-    print_shapes_table(loaded_shapes)  # Выводим данные в виде таблицы
+    main()
